@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: tictactoe_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: tictactoe
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tictactoe"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tictactoe_backend
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: tictactoe
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: "super_secret_jwt_secret_that_you_should_change_in_prod"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
